@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Validade de Certificados</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --color-bg: #2A6D32;
+            --color-surface: #3a7d44; /* Nuance para cards e elementos de superfície */
+            --color-primary-text: #FFFFFF;
+            --color-secondary-text: #E0E6F1;
+            --color-subtle-border: rgba(255, 255, 255, 0.15);
+
+            /* Cores de status mantidas */
+            --color-safe: #39FF14;      /* Verde neon para 90+ dias */
+            --color-attention: #FFD700; /* Amarelo/Ouro para 61-89 dias */
+            --color-warning: #FFA500;   /* Laranja para 31-60 dias */
+            --color-danger: #FF3131;    /* Vermelho para 1-30 dias */
+            --color-expired: #B0B0B0;   /* Cinza claro para Expirados */
+        }
+
+        body {
+            background-color: var(--color-bg);
+            color: var(--color-secondary-text);
+            font-family: 'Roboto', sans-serif; /* Fonte profissional */
+        }
+
+        .card {
+            background: var(--color-surface);
+            border: 1px solid var(--color-subtle-border);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
+            transition: all 0.2s ease-in-out;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.15), 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .status-ring-bg { stroke: rgba(0, 0, 0, 0.2); }
+        .status-ring-fg {
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 1s ease-out, stroke 0.5s ease;
+        }
+
+        /* Cores do anel e texto */
+        .status-safe { stroke: var(--color-safe); }
+        .text-safe { color: var(--color-safe); }
+        .status-attention { stroke: var(--color-attention); }
+        .text-attention { color: var(--color-attention); }
+        .status-warning { stroke: var(--color-warning); }
+        .text-warning { color: var(--color-warning); }
+        .status-danger { stroke: var(--color-danger); }
+        .text-danger { color: var(--color-danger); }
+        .status-expired { stroke: var(--color-expired); }
+
+        .summary-box {
+            background: var(--color-surface);
+            border: 1px solid var(--color-subtle-border);
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+        .summary-box:hover { background-color: #438b4f; }
+        
+        .summary-box.active-summary {
+            outline: 2px solid #98FB98;
+            outline-offset: 2px;
+            background-color: #438b4f;
+        }
+
+        .fade-in { animation: fadeIn 0.5s ease-out forwards; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        ::-webkit-scrollbar { width: 10px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
+        ::-webkit-scrollbar-thumb {
+            background-color: #98FB98;
+            border-radius: 10px;
+            border: 2px solid var(--color-bg);
+        }
+        
+        .filter-btn {
+            background: rgba(0,0,0,0.15);
+            border: 1px solid var(--color-subtle-border);
+            color: var(--color-secondary-text);
+            padding: 8px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 500;
+        }
+        .filter-btn:hover {
+            background: rgba(0,0,0,0.25);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+        .filter-btn.active {
+            background: #98FB98;
+            color: #1a4d23;
+            font-weight: 700;
+            border-color: #98FB98;
+        }
+
+        /* Estilos do Pop-up */
+        #alert-list::-webkit-scrollbar { width: 6px; }
+        #alert-list::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); }
+        #alert-list::-webkit-scrollbar-thumb {
+            background-color: #98FB98;
+            border-radius: 6px;
+        }
+
+        #alert-popup.show { opacity: 1; }
+        #alert-popup.show #alert-content { transform: scale(1); }
+
+        /* Estilo para a logo */
+        #logo-container {
+            position: absolute;
+            top: 1.5rem; /* 24px */
+            left: 1.5rem; /* 24px */
+            width: 150px; /* Ajuste a largura conforme necessário */
+            height: auto;
+            z-index: 10;
+        }
+
+        #logo-container img {
+            width: 100%;
+            height: auto;
+            opacity: 0.9;
+        }
+
+        /* Ajuste para telas menores */
+        @media (max-width: 640px) {
+            #logo-container {
+                display: none; /* Oculta a logo em telas muito pequenas para não poluir a interface */
+            }
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-6 md:p-8 relative">
+
+    <div id="logo-container">
+        <!-- IMPORTANTE: Coloque sua logo na pasta 'assets' e certifique-se que o nome é 'logo.png' -->
+        <img src="assets/logo.png" alt="Logo da Empresa" onerror="this.style.display='none'; document.getElementById('logo-placeholder-text').style.display='block';">
+        <div id="logo-placeholder-text" style="display: none; color: white; font-size: 0.8rem; text-align: center; padding: 10px; border: 1px dashed white; border-radius: 8px;">Logo não encontrada em 'assets/logo.png'</div>
+    </div>
+
+    <header class="text-center mb-8 md:mb-12">
+        <h1 class="text-3xl sm:text-4xl md:text-5xl font-bold text-white tracking-tight">Painel de Certificados</h1>
+        <p class="text-sm md:text-base text-gray-200 mt-2">Monitoramento de Validade em Tempo Real</p>
+    </header>
+
+    <main>
+        <section id="summary" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 md:mb-12">
+             <div data-filter="all" class="summary-box p-4 text-center cursor-pointer">
+                <h2 class="text-sm sm:text-base font-medium text-gray-300 uppercase tracking-wider">Total</h2>
+                <p id="total-count" class="text-3xl sm:text-4xl font-bold text-white">-</p>
+            </div>
+            <div data-filter="valid" class="summary-box p-4 text-center cursor-pointer">
+                <h2 class="text-sm sm:text-base font-medium uppercase tracking-wider" style="color: var(--color-safe);">Válidos</h2>
+                <p id="valid-count" class="text-3xl sm:text-4xl font-bold" style="color: var(--color-safe);">-</p>
+            </div>
+            <div data-filter="expiring" class="summary-box p-4 text-center cursor-pointer">
+                <h2 class="text-sm sm:text-base font-medium uppercase tracking-wider" style="color: var(--color-warning);">Vencendo</h2>
+                <p id="warning-count" class="text-3xl sm:text-4xl font-bold" style="color: var(--color-warning);">-</p>
+            </div>
+            <div data-filter="expired" class="summary-box p-4 text-center cursor-pointer">
+                <h2 class="text-sm sm:text-base font-medium uppercase tracking-wider" style="color: var(--color-danger);">Expirados</h2>
+                <p id="expired-count" class="text-3xl sm:text-4xl font-bold" style="color: var(--color-danger);">-</p>
+            </div>
+        </section>
+
+        <div class="mb-4 flex flex-col sm:flex-row gap-4">
+            <input type="text" id="search-input" placeholder="Buscar por Razão Social ou CNPJ..." class="w-full sm:flex-grow bg-black/20 border border-green-400/20 rounded-lg py-2 px-4 text-white placeholder-gray-400 focus:ring-2 focus:ring-green-300 focus:outline-none transition">
+            <select id="sort-select" class="w-full sm:w-auto bg-black/20 border border-green-400/20 rounded-lg py-2 px-4 text-white focus:ring-2 focus:ring-green-300 focus:outline-none transition">
+                <option value="expires_asc">Ordenar por Vencimento (Próximos)</option>
+                <option value="expires_desc">Ordenar por Vencimento (Distantes)</option>
+                <option value="name_asc">Ordenar por Nome (A-Z)</option>
+                <option value="name_desc">Ordenar por Nome (Z-A)</option>
+            </select>
+        </div>
+        
+        <div id="status-filters" class="mb-8 flex flex-wrap justify-center gap-2 sm:gap-4">
+            <button data-filter="all" class="filter-btn active">Todos</button>
+            <button data-filter="valid" class="filter-btn">Válidos (&gt;90d)</button>
+            <button data-filter="expiring" class="filter-btn">Vencendo (&lt;=90d)</button>
+            <button data-filter="expired" class="filter-btn">Expirados</button>
+        </div>
+
+        <div id="certificates-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <!-- Cards gerados via JS -->
+        </div>
+    </main>
+    
+    <!-- Pop-up de Alerta -->
+    <div id="alert-popup" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 hidden z-50 transition-opacity duration-300 ease-in-out opacity-0">
+        <div id="alert-content" class="bg-[var(--color-surface)] w-full max-w-lg rounded-xl shadow-2xl p-6 transform transition-all duration-300 ease-in-out scale-95">
+            <div class="flex items-start justify-between">
+                <div>
+                    <h2 class="text-xl font-bold text-white">Alerta de Vencimento</h2>
+                    <p class="text-sm text-gray-300 mt-1">Os seguintes certificados exigem sua atenção:</p>
+                </div>
+                <button id="close-popup-btn" class="text-gray-400 hover:text-white transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div id="alert-list" class="mt-4 max-h-64 overflow-y-auto pr-2">
+                <!-- Lista de certificados a vencer será inserida aqui -->
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        const certificatesData = [
+            {"RAZAO SOCIAL": "Nova Caldas Adm Serv Hoteleiros Ltda (buzios)", "CNPJ / CPF": "24.832.586/0001-19", "Data Início": "2024-10-07", "Data Fim": "2025-10-07"},
+            {"RAZAO SOCIAL": "Nova Caldas Adm Serv Hoteleiros Ltda (boulevard)", "CNPJ / CPF": "24.832.586/0003-80", "Data Início": "2024-10-07", "Data Fim": "2025-10-07"},
+            {"RAZAO SOCIAL": "Wam Prive Administração Hoteleira Ltda (H Prive)", "CNPJ / CPF": "02.757.474/0001-08", "Data Início": "2024-10-07", "Data Fim": "2025-10-07"},
+            {"RAZAO SOCIAL": "Wam Prive Administração Hoteleira Ltda (C Prive)", "CNPJ / CPF": "02.757.474/0005-31", "Data Início": "2024-10-07", "Data Fim": "2025-10-07"},
+            {"RAZAO SOCIAL": "Wam Porto Seguro Administradora Hoteleira Ltda (H Ondas)", "CNPJ / CPF": "39.998.726/0001-09", "Data Início": "2024-10-16", "Data Fim": "2025-10-16"},
+            {"RAZAO SOCIAL": "W7 Brasil Negocios Inteligentes Ltda", "CNPJ / CPF": "26.649.045/0004-28", "Data Início": "2025-01-17", "Data Fim": "2026-01-17"},
+            {"RAZAO SOCIAL": "Wam Brasil Intermediacao De Negocios Sao Paulo Ltda", "CNPJ / CPF": "35.728.913/0001-03", "Data Início": "2025-01-17", "Data Fim": "2026-01-17"},
+            {"RAZAO SOCIAL": "Spe Vale Verde Empreendimento Imobiliario Ltda", "CNPJ / CPF": "33.337.272/0001-30", "Data Início": "2025-01-17", "Data Fim": "2026-01-17"},
+            {"RAZAO SOCIAL": "Wam Hotéis E Resorts Fortaleza Ltda", "CNPJ / CPF": "33.043.656/0001-40", "Data Início": "2025-01-17", "Data Fim": "2026-01-17"},
+            {"RAZAO SOCIAL": "WAM Hotéis e Resorts S/A (BR Trip Holding)", "CNPJ / CPF": "33.624.045/0001-96", "Data Início": "2025-03-17", "Data Fim": "2026-03-17"},
+            {"RAZAO SOCIAL": "WAM Hotéis Ltda (antiga EIP)", "CNPJ / CPF": "03.774.432/0001-48", "Data Início": "2025-03-17", "Data Fim": "2026-03-17"},
+            {"RAZAO SOCIAL": "Wam Hotéis Multipropriedade Ltda (antiga NGIC)", "CNPJ / CPF": "23.364.554/0001-73", "Data Início": "2025-03-17", "Data Fim": "2026-03-17"},
+            {"RAZAO SOCIAL": "WAM INCORPORACAO SA", "CNPJ / CPF": "29.855.842/0001-07", "Data Início": "2025-03-17", "Data Fim": "2026-03-17"},
+            {"RAZAO SOCIAL": "W7 BRASIL PARTICIPACOES E INVESTIMENTOS LTDA", "CNPJ / CPF": "33.889.071/0001-46", "Data Início": "2025-03-17", "Data Fim": "2026-03-17"},
+            {"RAZAO SOCIAL": "CLUBCIA VIAGENS E VANTAGENS LTDA", "CNPJ / CPF": "18.601.079/0002-52", "Data Início": "2025-03-17", "Data Fim": "2026-03-17"},
+            {"RAZAO SOCIAL": "SPE CABO BRANCO TURISMO E EMPREENDIMENTO IMOBILIA", "CNPJ / CPF": "57.687.144/0001-85", "Data Início": "2025-03-17", "Data Fim": "2026-03-17"},
+            {"RAZAO SOCIAL": "Wam Riviera Administração Hoteleira Ltda", "CNPJ / CPF": "17.870.348/0001-32", "Data Início": "2025-03-17", "Data Fim": "2026-03-17"},
+            {"RAZAO SOCIAL": "Wam Ilhas do Lago Administradora Ltda", "CNPJ / CPF": "28.580.024/0001-86", "Data Início": "2025-03-17", "Data Fim": "2026-03-17"},
+            {"RAZAO SOCIAL": "Wam Eda Administração Hoteleira", "CNPJ / CPF": "42.493.597/0001-01", "Data Início": "2025-03-17", "Data Fim": "2026-03-17"},
+            {"RAZAO SOCIAL": "Wam Comercialização S/A", "CNPJ / CPF": "17.919.649/0001-03", "Data Início": "2025-03-17", "Data Fim": "2026-03-17"},
+            {"RAZAO SOCIAL": "Wam Digital Ltda", "CNPJ / CPF": "37.545.196/0001-00", "Data Início": "2025-03-17", "Data Fim": "2026-03-17"},
+            {"RAZAO SOCIAL": "W7 Brasil Negocios Inteligentes Ltda", "CNPJ / CPF": "26.649.045/0001-85", "Data Início": "2025-03-17", "Data Fim": "2026-03-17"},
+            {"RAZAO SOCIAL": "Wam Brasil Intermediacao De Negocios Goias Ltda", "CNPJ / CPF": "35.670.358/0001-06", "Data Início": "2025-03-17", "Data Fim": "2026-03-17"},
+            {"RAZAO SOCIAL": "W7 Brasil Participacoes E Investimentos Fortaleza Ltda", "CNPJ / CPF": "35.649.777/0001-66", "Data Início": "2025-03-17", "Data Fim": "2026-03-17"},
+            {"RAZAO SOCIAL": "Dom Pedro Laguna Resort Empreendimentos Imobiliarios Ltda", "CNPJ / CPF": "41.928.634/0001-96", "Data Início": "2025-03-17", "Data Fim": "2026-03-17"},
+            {"RAZAO SOCIAL": "Clubcia Viagens E Vantagens Ltda.", "CNPJ / CPF": "18.601.079/0001-71", "Data Início": "2025-03-17", "Data Fim": "2026-03-17"},
+            {"RAZAO SOCIAL": "Wam Corretagem De Imoveis Ltda", "CNPJ / CPF": "35.561.514/0001-09", "Data Início": "2025-03-17", "Data Fim": "2026-03-17"},
+            {"RAZAO SOCIAL": "WAM BRASIL INTERMEDIACAO DE NEGOCIOS ALAGOAS LTDA", "CNPJ / CPF": "42.780.870/0001-70", "Data Início": "2025-03-17", "Data Fim": "2026-03-17"},
+            {"RAZAO SOCIAL": "Náutico Hotéis e Parques Ltda", "CNPJ / CPF": "05.513.549/0001-01", "Data Início": "2025-04-20", "Data Fim": "2026-04-20"},
+            {"RAZAO SOCIAL": "Eldorado Water Park Ltda", "CNPJ / CPF": "07.329.036/0001-62", "Data Início": "2025-04-20", "Data Fim": "2026-04-20"},
+            {"RAZAO SOCIAL": "Wam Praias do Lago Administradora Ltda", "CNPJ / CPF": "38.157.968/0001-07", "Data Início": "2025-04-20", "Data Fim": "2026-04-20"},
+            {"RAZAO SOCIAL": "WAM Hoteis e Resorts Fortaleza Ltda (Dom Pedro Laguna)", "CNPJ / CPF": "33.043.656/0001-40", "Data Início": "2025-04-20", "Data Fim": "2026-04-20"},
+            {"RAZAO SOCIAL": "WAM Hoteis e Resorts Fortaleza Ltda (Filial) Resort Do Lago", "CNPJ / CPF": "33.043.656/0002-21", "Data Início": "2025-04-20", "Data Fim": "2026-04-20"},
+            {"RAZAO SOCIAL": "Wam Fidelidade S.A", "CNPJ / CPF": "38.827.558/0001-18", "Data Início": "2025-04-20", "Data Fim": "2026-04-20"},
+            {"RAZAO SOCIAL": "W 60 Empreendimentos Imobiliarios Ltda", "CNPJ / CPF": "33.651.640/0001-10", "Data Início": "2025-04-20", "Data Fim": "2026-04-20"},
+            {"RAZAO SOCIAL": "W 30 Empreeendimentos Imobiliarios Ltda", "CNPJ / CPF": "30.157.207/0001-35", "Data Início": "2025-04-20", "Data Fim": "2026-04-20"},
+            {"RAZAO SOCIAL": "Wpa Gestao Ltda", "CNPJ / CPF": "23.815.961/0001-50", "Data Início": "2025-04-20", "Data Fim": "2026-04-20"},
+            {"RAZAO SOCIAL": "ESCOLA DE FORMACAO WAM LTDA", "CNPJ / CPF": "27.165.092/0001-16", "Data Início": "2025-04-20", "Data Fim": "2026-04-20"},
+            {"RAZAO SOCIAL": "ILHAS DO LAGO INCORPORACAO SPE SA", "CNPJ / CPF": "15.797.526/0001-11", "Data Início": "2025-04-20", "Data Fim": "2026-04-20"},
+            {"RAZAO SOCIAL": "WAM BRASIL INTERMEDIACAO DE NEGOCIOS RIO GRANDE D", "CNPJ / CPF": "35.169.129/0001-02", "Data Início": "2025-04-20", "Data Fim": "2026-04-20"},
+            {"RAZAO SOCIAL": "WAM CALDAS NOVAS LTDA", "CNPJ / CPF": "51.066.941/0001-69", "Data Início": "2025-04-20", "Data Fim": "2026-04-20"},
+            {"RAZAO SOCIAL": "WAM HOTEIS E RESORTS ADMINISTRADORA LTDA", "CNPJ / CPF": "33.043.656/0003-02", "Data Início": "2025-04-20", "Data Fim": "2026-04-20"},
+            {"RAZAO SOCIAL": "Kawana Park Ltda", "CNPJ / CPF": "42.933.773/0001-70", "Data Início": "2025-05-20", "Data Fim": "2026-05-20"},
+            {"RAZAO SOCIAL": "Projuris (Solicitar ao Jurídico)", "CNPJ / CPF": "-", "Data Início": "2025-07-28", "Data Fim": "2027-07-22"},
+            {"RAZAO SOCIAL": "Solar Pedra Da Ilha Adm Hot Ltda", "CNPJ / CPF": "37.751.772/0001-75", "Data Início": "2025-01-17", "Data Fim": "2026-01-17"},
+            {"RAZAO SOCIAL": "Solar Pedra da Ilha Administração Hoteleira Ltda", "CNPJ / CPF": "37.751.772/0001-75", "Data Início": "2024-10-16", "Data Fim": "2025-10-16"},
+            {"RAZAO SOCIAL": "Estancia Thermas Prive Caldas (Soc.Civil)", "CNPJ / CPF": "02.666.733/0001-95", "Data Início": "2020-02-06", "Data Fim": "2021-02-05"},
+            {"RAZAO SOCIAL": "Nautico Praia Clube (Soc.Civil)", "CNPJ / CPF": "05.802.503/0001-02", "Data Início": "2022-05-13", "Data Fim": "2023-05-13"},
+            {"RAZAO SOCIAL": "WAM Hoteis e Resorts Blue Mountain Ltda (P Blue Mountain)", "CNPJ / CPF": "36.263.260/0001-05", "Data Início": "2023-04-15", "Data Fim": "2024-04-14"},
+            {"RAZAO SOCIAL": "Water Park Sao Pedro Empreendimentos Imobiliarios Ltda", "CNPJ / CPF": "28.633.654/0001-71", "Data Início": "2023-11-27", "Data Fim": "2024-11-26"},
+            {"RAZAO SOCIAL": "Spe Porto Seguro 02 Empreendimentos Imobiliários S.A", "CNPJ / CPF": "22.059.167/0001-60", "Data Início": "2023-11-27", "Data Fim": "2024-11-26"},
+            {"RAZAO SOCIAL": "W 50 Empreendimentos Imobiliarios Ltda", "CNPJ / CPF": "33.770.634/0001-82", "Data Início": "2023-11-27", "Data Fim": "2024-11-26"},
+            {"RAZAO SOCIAL": "Malibu Construtora E Incorporadora Ltda", "CNPJ / CPF": "05.456.126/0001-99", "Data Início": "2023-11-27", "Data Fim": "2024-11-26"},
+            {"RAZAO SOCIAL": "Refugio Das Lontras Pousada Empreendimentos Imobiliarios Ltda", "CNPJ / CPF": "41.402.028/0001-32", "Data Início": "2023-11-27", "Data Fim": "2024-11-26"},
+        ];
+        
+        const grid = document.getElementById('certificates-grid');
+        const searchInput = document.getElementById('search-input');
+        const sortSelect = document.getElementById('sort-select');
+        const statusFilters = document.getElementById('status-filters');
+        const summarySection = document.getElementById('summary');
+        const alertPopup = document.getElementById('alert-popup');
+        const alertContent = document.getElementById('alert-content');
+        const alertList = document.getElementById('alert-list');
+        const closePopupBtn = document.getElementById('close-popup-btn');
+
+        let intervalId;
+        let currentStatusFilter = 'all';
+        
+        const parseDate = (dateString) => {
+            if (!dateString || !/^\d{4}-\d{2}-\d{2}$/.test(dateString)) return null;
+            return new Date(`${dateString}T00:00:00`);
+        };
+
+        const sortData = (data, sortBy) => {
+            return [...data].sort((a, b) => {
+                const now = new Date();
+                const dateA = parseDate(a['Data Fim'])?.getTime() || now.getTime();
+                const dateB = parseDate(b['Data Fim'])?.getTime() || now.getTime();
+                const nameA = a['RAZAO SOCIAL'].toLowerCase();
+                const nameB = b['RAZAO SOCIAL'].toLowerCase();
+                const diffA = dateA - now.getTime();
+                const diffB = dateB - now.getTime();
+                if (diffA <= 0 && diffB <= 0) {
+                    return sortBy === 'expires_asc' ? dateA - dateB : dateB - dateA;
+                }
+                switch (sortBy) {
+                    case 'expires_asc': return dateA - dateB;
+                    case 'expires_desc': return dateB - dateA;
+                    case 'name_asc': return nameA.localeCompare(nameB);
+                    case 'name_desc': return nameB.localeCompare(nameA);
+                    default: return 0;
+                }
+            });
+        };
+
+        const renderCards = () => {
+            grid.innerHTML = '';
+            const searchTerm = searchInput.value.toLowerCase();
+            const sortBy = sortSelect.value;
+            const now = new Date();
+            let statusFilteredData = certificatesData.filter(cert => {
+                const endDate = parseDate(cert['Data Fim']);
+                if (!endDate) return currentStatusFilter === 'all';
+                const diff = endDate.getTime() - now.getTime();
+                const daysLeft = Math.ceil(diff / (1000 * 60 * 60 * 24));
+                
+                if (currentStatusFilter === 'expired') return diff <= 0;
+                if (currentStatusFilter === 'expiring') return diff > 0 && daysLeft <= 90;
+                if (currentStatusFilter === 'valid') return diff > 0 && daysLeft > 90;
+                
+                return true; // para o filtro 'all'
+            });
+
+            let searchFilteredData = statusFilteredData.filter(cert =>
+                cert['RAZAO SOCIAL'].toLowerCase().includes(searchTerm) ||
+                cert['CNPJ / CPF'].toLowerCase().includes(searchTerm)
+            );
+            let sortedData = sortData(searchFilteredData, sortBy);
+            if (sortedData.length === 0) {
+                grid.innerHTML = `<p class="text-gray-300 col-span-full text-center py-10">Nenhum certificado corresponde aos filtros selecionados.</p>`;
+                return;
+            }
+            sortedData.forEach((cert, index) => {
+                const card = document.createElement('div');
+                card.className = 'card p-5 flex flex-col justify-between fade-in';
+                card.style.animationDelay = `${index * 40}ms`;
+                card.dataset.startDate = cert['Data Início'];
+                card.dataset.endDate = cert['Data Fim'];
+                const endDate = parseDate(cert['Data Fim']);
+                card.innerHTML = `
+                    <div>
+                        <h3 class="font-bold text-base text-white truncate" title="${cert['RAZAO SOCIAL']}">${cert['RAZAO SOCIAL']}</h3>
+                        <p class="text-sm text-gray-300 mb-4">${cert['CNPJ / CPF']}</p>
+                    </div>
+                    <div class="flex items-center justify-between mt-4">
+                        <div class="flex-grow">
+                            <p class="text-xs text-gray-400">Expira em:</p>
+                            <p class="font-medium text-base">${endDate ? endDate.toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : 'Data Inválida'}</p>
+                            <div class="countdown-timer text-sm font-medium">Calculando...</div>
+                        </div>
+                        <div class="relative w-20 h-20">
+                            <svg class="w-full h-full" viewBox="0 0 100 100">
+                                <circle class="status-ring-bg" cx="50" cy="50" r="45" stroke-width="10" fill="transparent"></circle>
+                                <circle class="status-ring-fg" cx="50" cy="50" r="45" stroke-width="10" fill="transparent"
+                                        stroke-dasharray="282.74" stroke-dashoffset="282.74"></circle>
+                            </svg>
+                            <div class="absolute inset-0 flex items-center justify-center">
+                                <span class="days-left-ring text-xl font-bold">-</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+            updateTimers();
+        };
+        
+        const updateSummary = () => {
+             const now = new Date();
+             let validCount = 0;
+             let warningCount = 0;
+             let expiredCount = 0;
+             certificatesData.forEach(cert => {
+                 const endDate = parseDate(cert['Data Fim']);
+                 if (!endDate) return;
+                 const diff = endDate.getTime() - now.getTime();
+                 const daysLeft = Math.ceil(diff / (1000 * 60 * 60 * 24));
+                 if (diff <= 0) {
+                     expiredCount++;
+                 } else {
+                     if (daysLeft <= 90) {
+                         warningCount++;
+                     } else {
+                         validCount++;
+                     }
+                 }
+             });
+             document.getElementById('total-count').textContent = certificatesData.length;
+             document.getElementById('valid-count').textContent = validCount;
+             document.getElementById('warning-count').textContent = warningCount;
+             document.getElementById('expired-count').textContent = expiredCount;
+        };
+
+        const updateTimers = () => {
+            const now = new Date();
+            document.querySelectorAll('.card').forEach(card => {
+                const timer = card.querySelector('.countdown-timer');
+                const ring = card.querySelector('.status-ring-fg');
+                const daysLeftRing = card.querySelector('.days-left-ring');
+                const endDate = parseDate(card.dataset.endDate);
+                if (!endDate) {
+                    timer.innerHTML = '<span class="text-gray-400">Inválido</span>';
+                    return;
+                }
+                const diff = endDate.getTime() - now.getTime();
+                const daysLeft = Math.ceil(diff / (1000 * 60 * 60 * 24));
+                let statusClass = 'status-expired';
+                let daysForRing = 'X';
+                let progress = 0;
+                if (diff > 0) {
+                    const startDate = parseDate(card.dataset.startDate);
+                    const totalDuration = startDate ? (endDate.getTime() - startDate.getTime()) : (365 * 24 * 60 * 60 * 1000);
+                    const timeLeft = totalDuration > 0 ? endDate.getTime() - now.getTime() : 0;
+                    progress = totalDuration > 0 ? Math.max(0, timeLeft / totalDuration) : 0;
+                    daysForRing = daysLeft;
+                    if (daysLeft <= 30) statusClass = 'status-danger';
+                    else if (daysLeft <= 60) statusClass = 'status-warning';
+                    else if (daysLeft < 90) statusClass = 'status-attention';
+                    else statusClass = 'status-safe';
+                    const s = Math.floor((diff / 1000) % 60).toString().padStart(2, '0');
+                    const m = Math.floor((diff / 1000 / 60) % 60).toString().padStart(2, '0');
+                    const h = Math.floor((diff / (1000 * 60 * 60)) % 24).toString().padStart(2, '0');
+                    const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+                    timer.innerHTML = `<span class="${statusClass.replace('status-', 'text-')}">${d}d ${h}:${m}:${s}</span>`;
+                } else {
+                    timer.innerHTML = `<span style="color: var(--color-expired)">Expirado</span>`;
+                }
+                ring.classList.remove('status-safe', 'status-attention', 'status-warning', 'status-danger', 'status-expired');
+                ring.classList.add(statusClass);
+                const circumference = 282.74;
+                ring.style.strokeDashoffset = circumference * (1 - progress);
+                daysLeftRing.textContent = daysForRing;
+            });
+        };
+
+        const applyFilter = (filterValue) => {
+            currentStatusFilter = filterValue;
+
+            // Sincroniza o estado ativo dos botões de filtro
+            document.querySelectorAll('#status-filters .filter-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.filter === filterValue);
+            });
+            
+            // Sincroniza o estado ativo dos cards de resumo
+            document.querySelectorAll('#summary .summary-box').forEach(box => {
+                box.classList.toggle('active-summary', box.dataset.filter === filterValue);
+            });
+
+            renderCards();
+        };
+
+        const checkAndShowAlerts = () => {
+            const now = new Date();
+            const expiringCerts = certificatesData.filter(cert => {
+                const endDate = parseDate(cert['Data Fim']);
+                if (!endDate) return false;
+                const diff = endDate.getTime() - now.getTime();
+                if (diff <= 0) return false;
+                const daysLeft = Math.ceil(diff / (1000 * 60 * 60 * 24));
+                return daysLeft <= 30;
+            });
+
+            if (expiringCerts.length > 0) {
+                alertList.innerHTML = '';
+                expiringCerts
+                    .sort((a, b) => parseDate(a['Data Fim']) - parseDate(b['Data Fim']))
+                    .forEach(cert => {
+                        const endDate = parseDate(cert['Data Fim']);
+                        const diff = endDate.getTime() - now.getTime();
+                        const daysLeft = Math.ceil(diff / (1000 * 60 * 60 * 24));
+                        const listItem = document.createElement('div');
+                        listItem.className = 'p-3 mb-2 bg-black/20 rounded-lg text-sm';
+                        listItem.innerHTML = `
+                            <p class="font-bold text-white truncate">${cert['RAZAO SOCIAL']}</p>
+                            <p class="text-danger font-semibold">Vence em ${daysLeft} dia(s)</p>
+                        `;
+                        alertList.appendChild(listItem);
+                    });
+                
+                alertPopup.classList.remove('hidden');
+                setTimeout(() => {
+                    alertPopup.classList.add('show');
+                }, 10);
+            }
+        };
+
+        const closePopup = () => {
+            alertPopup.classList.remove('show');
+            setTimeout(() => {
+                alertPopup.classList.add('hidden');
+            }, 300);
+        };
+
+        closePopupBtn.addEventListener('click', closePopup);
+        alertPopup.addEventListener('click', (e) => {
+            if (e.target === alertPopup) {
+                closePopup();
+            }
+        });
+        
+        statusFilters.addEventListener('click', (e) => {
+            const button = e.target.closest('button[data-filter]');
+            if (button) {
+                applyFilter(button.dataset.filter);
+            }
+        });
+        
+        summarySection.addEventListener('click', (e) => {
+            const box = e.target.closest('.summary-box[data-filter]');
+            if (box) {
+                applyFilter(box.dataset.filter);
+            }
+        });
+
+        searchInput.addEventListener('input', renderCards);
+        sortSelect.addEventListener('change', renderCards);
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelector('.summary-box[data-filter="all"]').classList.add('active-summary');
+            updateSummary();
+            renderCards();
+            checkAndShowAlerts();
+            if (intervalId) clearInterval(intervalId);
+            intervalId = setInterval(() => {
+                updateTimers();
+                updateSummary();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
+
+
+
