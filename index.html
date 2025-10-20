@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard de Validade de Certificados</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
+    <link rel="preconnect" href="[https://fonts.googleapis.com](https://fonts.googleapis.com)">
+    <link rel="preconnect" href="[https://fonts.gstatic.com](https://fonts.gstatic.com)" crossorigin>
+    <link href="[https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap](https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap)" rel="stylesheet">
     <style>
         :root {
             --color-bg: #2A6D32;
@@ -122,21 +122,13 @@
         #alert-popup.show { opacity: 1; }
         #alert-popup.show #alert-content { transform: scale(1); }
 
-        /* Estilo para a logo (NOVO VISUAL) */
+        /* Estilo para a logo (pequena e sem bordas) */
         #logo-container {
             position: absolute;
-            top: 1.5rem; /* 24px */
-            left: 1.5rem; /* 24px */
-            width: 140px; /* Largura ajustada */
-            background-color: rgba(0, 0, 0, 0.15); /* Fundo sutil para destacar */
-            padding: 0.5rem; /* 8px */
-            border-radius: 10px; /* Bordas arredondadas */
-            border: 1px solid var(--color-subtle-border);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            top: 1.5rem;
+            left: 1.5rem;
+            width: 120px; /* Largura menor */
             z-index: 10;
-            display: flex;
-            align-items: center;
-            justify-content: center;
         }
 
         #logo-container img {
@@ -148,7 +140,7 @@
         /* Ajuste para telas menores */
         @media (max-width: 640px) {
             #logo-container {
-                display: none; /* Oculta a logo em telas muito pequenas para não poluir a interface */
+                display: none;
             }
         }
     </style>
@@ -157,8 +149,8 @@
 
     <div id="logo-container">
         <!-- IMPORTANTE: Coloque sua logo na pasta 'assets' e certifique-se que o nome é 'logo.jpg' -->
-        <img src="assets/logo.jpg" alt="Logo da Empresa" onerror="this.style.display='none'; document.getElementById('logo-placeholder-text').style.display='flex';">
-        <div id="logo-placeholder-text" style="display: none; color: white; font-size: 0.8rem; text-align: center; height: 100%; align-items: center; justify-content: center;">Logo não encontrada</div>
+        <img src="assets/logo.jpg" alt="Logo da Empresa" onerror="this.style.display='none'; document.getElementById('logo-placeholder-text').style.display='block';">
+        <div id="logo-placeholder-text" style="display: none; color: white; font-size: 0.8rem; text-align: center; padding: 10px; border: 1px dashed rgba(255,255,255,0.5); border-radius: 8px;">Logo não encontrada</div>
     </div>
 
     <header class="text-center mb-8 md:mb-12">
@@ -217,7 +209,7 @@
                     <p class="text-sm text-gray-300 mt-1">Os seguintes certificados exigem sua atenção:</p>
                 </div>
                 <button id="close-popup-btn" class="text-gray-400 hover:text-white transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 </button>
