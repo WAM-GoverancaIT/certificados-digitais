@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard de Validade de Certificados</title>
-    <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
-    <link rel="preconnect" href="[https://fonts.googleapis.com](https://fonts.googleapis.com)">
-    <link rel="preconnect" href="[https://fonts.gstatic.com](https://fonts.gstatic.com)" crossorigin>
-    <link href="[https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap](https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap)" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --color-bg: #2A6D32;
@@ -89,27 +89,6 @@
             border-radius: 10px;
             border: 2px solid var(--color-bg);
         }
-        
-        .filter-btn {
-            background: rgba(0,0,0,0.15);
-            border: 1px solid var(--color-subtle-border);
-            color: var(--color-secondary-text);
-            padding: 8px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            font-weight: 500;
-        }
-        .filter-btn:hover {
-            background: rgba(0,0,0,0.25);
-            border-color: rgba(255, 255, 255, 0.3);
-        }
-        .filter-btn.active {
-            background: #98FB98;
-            color: #1a4d23;
-            font-weight: 700;
-            border-color: #98FB98;
-        }
 
         /* Estilos do Pop-up */
         #alert-list::-webkit-scrollbar { width: 6px; }
@@ -178,7 +157,7 @@
             </div>
         </section>
 
-        <div class="mb-4 flex flex-col sm:flex-row gap-4">
+        <div class="mb-8 flex flex-col sm:flex-row gap-4">
             <input type="text" id="search-input" placeholder="Buscar por Razão Social ou CNPJ..." class="w-full sm:flex-grow bg-black/20 border border-green-400/20 rounded-lg py-2 px-4 text-white placeholder-gray-400 focus:ring-2 focus:ring-green-300 focus:outline-none transition">
             <select id="sort-select" class="w-full sm:w-auto bg-black/20 border border-green-400/20 rounded-lg py-2 px-4 text-white focus:ring-2 focus:ring-green-300 focus:outline-none transition">
                 <option value="expires_asc">Ordenar por Vencimento (Próximos)</option>
@@ -186,13 +165,6 @@
                 <option value="name_asc">Ordenar por Nome (A-Z)</option>
                 <option value="name_desc">Ordenar por Nome (Z-A)</option>
             </select>
-        </div>
-        
-        <div id="status-filters" class="mb-8 flex flex-wrap justify-center gap-2 sm:gap-4">
-            <button data-filter="all" class="filter-btn active">Todos</button>
-            <button data-filter="valid" class="filter-btn">Válidos (&gt;90d)</button>
-            <button data-filter="expiring" class="filter-btn">Vencendo (&lt;=90d)</button>
-            <button data-filter="expired" class="filter-btn">Expirados</button>
         </div>
 
         <div id="certificates-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -209,7 +181,7 @@
                     <p class="text-sm text-gray-300 mt-1">Os seguintes certificados exigem sua atenção:</p>
                 </div>
                 <button id="close-popup-btn" class="text-gray-400 hover:text-white transition-colors">
-                    <svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 </button>
@@ -266,7 +238,7 @@
             {"RAZAO SOCIAL": "WAM CALDAS NOVAS LTDA", "CNPJ / CPF": "51.066.941/0001-69", "Data Início": "2025-04-20", "Data Fim": "2026-04-20"},
             {"RAZAO SOCIAL": "WAM HOTEIS E RESORTS ADMINISTRADORA LTDA", "CNPJ / CPF": "33.043.656/0003-02", "Data Início": "2025-04-20", "Data Fim": "2026-04-20"},
             {"RAZAO SOCIAL": "Kawana Park Ltda", "CNPJ / CPF": "42.933.773/0001-70", "Data Início": "2025-05-20", "Data Fim": "2026-05-20"},
-            {"RAZAO SOCIAL": "Projuris (Solicitar ao Jurídico)", "CNPJ / CPF": "-", "Data Início": "2025-07-28", "Data Fim": "2027-07-22"},
+            {"RAZAO SOCIAL": "Projuris", "CNPJ / CPF": "-", "Data Início": "2025-07-28", "Data Fim": "2027-07-22"},
             {"RAZAO SOCIAL": "Solar Pedra Da Ilha Adm Hot Ltda", "CNPJ / CPF": "37.751.772/0001-75", "Data Início": "2025-01-17", "Data Fim": "2026-01-17"},
             {"RAZAO SOCIAL": "Solar Pedra da Ilha Administração Hoteleira Ltda", "CNPJ / CPF": "37.751.772/0001-75", "Data Início": "2024-10-16", "Data Fim": "2025-10-16"},
             {"RAZAO SOCIAL": "Estancia Thermas Prive Caldas (Soc.Civil)", "CNPJ / CPF": "02.666.733/0001-95", "Data Início": "2020-02-06", "Data Fim": "2021-02-05"},
@@ -282,7 +254,6 @@
         const grid = document.getElementById('certificates-grid');
         const searchInput = document.getElementById('search-input');
         const sortSelect = document.getElementById('sort-select');
-        const statusFilters = document.getElementById('status-filters');
         const summarySection = document.getElementById('summary');
         const alertPopup = document.getElementById('alert-popup');
         const alertContent = document.getElementById('alert-content');
@@ -451,11 +422,6 @@
 
         const applyFilter = (filterValue) => {
             currentStatusFilter = filterValue;
-
-            // Sincroniza o estado ativo dos botões de filtro
-            document.querySelectorAll('#status-filters .filter-btn').forEach(btn => {
-                btn.classList.toggle('active', btn.dataset.filter === filterValue);
-            });
             
             // Sincroniza o estado ativo dos cards de resumo
             document.querySelectorAll('#summary .summary-box').forEach(box => {
@@ -511,13 +477,6 @@
         alertPopup.addEventListener('click', (e) => {
             if (e.target === alertPopup) {
                 closePopup();
-            }
-        });
-        
-        statusFilters.addEventListener('click', (e) => {
-            const button = e.target.closest('button[data-filter]');
-            if (button) {
-                applyFilter(button.dataset.filter);
             }
         });
         
