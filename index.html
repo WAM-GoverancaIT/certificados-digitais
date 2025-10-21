@@ -11,7 +11,7 @@
     <style>
         :root {
             --color-bg: #2A6D32;
-            --color-surface: #3a7d44; /* Nuance para cards e elementos de superfície */
+            --color-surface: #215931; /* Nova cor para os cards */
             --color-primary-text: #FFFFFF;
             --color-secondary-text: #E0E6F1;
             --color-subtle-border: rgba(255, 255, 255, 0.15);
@@ -68,12 +68,12 @@
             border-radius: 12px;
             transition: all 0.3s ease;
         }
-        .summary-box:hover { background-color: #438b4f; }
+        .summary-box:hover { background-color: #2c6e40; }
         
         .summary-box.active-summary {
             outline: 2px solid #98FB98;
             outline-offset: 2px;
-            background-color: #438b4f;
+            background-color: #2c6e40;
         }
 
         .fade-in { animation: fadeIn 0.5s ease-out forwards; }
@@ -89,6 +89,21 @@
             border-radius: 10px;
             border: 2px solid var(--color-bg);
         }
+        
+        #sort-select {
+            background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23cccccc%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E');
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            background-size: 0.65em auto;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+        }
+
+        #sort-select option {
+            background: var(--color-surface);
+            color: white;
+        }
 
         /* Estilos do Pop-up */
         #alert-list::-webkit-scrollbar { width: 6px; }
@@ -101,40 +116,16 @@
         #alert-popup.show { opacity: 1; }
         #alert-popup.show #alert-content { transform: scale(1); }
 
-        /* Estilo para a logo (pequena e sem bordas) */
-        #logo-container {
-            position: absolute;
-            top: 1.5rem;
-            left: 1.5rem;
-            width: 120px; /* Largura menor */
-            z-index: 10;
-        }
-
-        #logo-container img {
-            width: 100%;
-            height: auto;
-            display: block;
-        }
-
-        /* Ajuste para telas menores */
-        @media (max-width: 640px) {
-            #logo-container {
-                display: none;
-            }
-        }
     </style>
 </head>
-<body class="p-4 sm:p-6 md:p-8 relative">
-
-    <div id="logo-container">
-        <!-- IMPORTANTE: Coloque sua logo na pasta 'assets' e certifique-se que o nome é 'logo.jpg' -->
-        <img src="assets/logo.jpeg" alt="Logo da Empresa" onerror="this.style.display='none'; document.getElementById('logo-placeholder-text').style.display='block';">
-        <div id="logo-placeholder-text" style="display: none; color: white; font-size: 0.8rem; text-align: center; padding: 10px; border: 1px dashed rgba(255,255,255,0.5); border-radius: 8px;">Logo não encontrada</div>
-    </div>
+<body class="p-4 sm:p-6 md:p-8">
 
     <header class="text-center mb-8 md:mb-12">
-        <h1 class="text-3xl sm:text-4xl md:text-5xl font-bold text-white tracking-tight">Painel de Certificados</h1>
-        <p class="text-sm md:text-base text-gray-200 mt-2">Monitoramento de Validade em Tempo Real</p>
+        <div class="flex justify-center items-center gap-4">
+            <img src="data:image/jpeg;base64,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" alt="Logo da Empresa" class="h-12 w-auto rounded-[10px]">
+            <h1 class="text-3xl sm:text-4xl md:text-5xl font-bold text-white tracking-tight">Painel de Certificados</h1>
+        </div>
+        <p class="text-center text-sm md:text-base text-gray-200 mt-2">Monitoramento de Validade em Tempo Real</p>
     </header>
 
     <main>
